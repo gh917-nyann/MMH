@@ -235,32 +235,298 @@ static void printHex(const AES::Block& block) {
     std::cout << std::dec << '\n';
 }
 
+
 int main() {
-    // FIPS-197 AES-128 example:
-    // Key:        000102030405060708090a0b0c0d0e0f
-    // Plaintext:  00112233445566778899aabbccddeeff
-    // Ciphertext: 69c4e0d86a7b0430d8cdb78070b4c55a
-    try {
-        auto key = hexToBytes("000102030405060708090a0b0c0d0e0f");
-        auto plaintextVec = hexToBytes("00112233445566778899aabbccddeeff");
-        
-        if (plaintextVec.size() != 16) throw std::invalid_argument("Plaintext must be 16 bytes.");
+    int passed = 0;
+    int failed = 0;
 
-        AES aes(key, 128);
-        AES::Block plaintext{};
-        std::copy(plaintextVec.begin(), plaintextVec.end(), plaintext.begin());
+    auto check = [&](bool ok, const std::string& name) {
+        std::cout << (ok ? "[PASS] " : "[FAIL] ")
+                  << name << '\n';
+        ok ? ++passed : ++failed;
+    };
 
-        auto ciphertext = aes.encrypt(plaintext);
-        std::cout << "Ciphertext: ";
-        printHex(ciphertext);
+    auto printBytes = [](const std::string& label, const auto& bytes) {
+        std::cout << std::left << std::setw(12) << label << ": ";
+        for (auto b : bytes) {
+            std::cout << std::hex << std::setfill('0')
+                      << std::setw(2)
+                      << static_cast<unsigned int>(b);
+        }
+        std::cout << std::dec << std::setfill(' ') << '\n';
+    };
 
-        auto recovered = aes.decrypt(ciphertext);
-        std::cout << "Decrypted : ";
-        printHex(recovered);
-    } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << '\n';
-        return 1;
+    auto toBlock = [](const std::string& hex) {
+        auto bytes = hexToBytes(hex);
+        if (bytes.size() != 16) {
+            throw std::invalid_argument(
+                "AES input must contain exactly 16 bytes."
+            );
+        }
+
+        AES::Block block{};
+        std::copy(bytes.begin(), bytes.end(), block.begin());
+        return block;
+    };
+
+    // ==================================================
+    // 1. NIST FIPS 197 Known Answer Tests
+    // ==================================================
+    std::cout << "\n========================================\n";
+    std::cout << "1. FIPS-197 KNOWN ANSWER TESTS\n";
+    std::cout << "========================================\n";
+
+    struct TestVector {
+        int bits;
+        std::string key;
+        std::string plaintext;
+        std::string ciphertext;
+    };
+
+    const std::string plaintext =
+        "00112233445566778899aabbccddeeff";
+
+    const std::vector<TestVector> vectors = {
+        {
+            128,
+            "000102030405060708090a0b0c0d0e0f",
+            plaintext,
+            "69c4e0d86a7b0430d8cdb78070b4c55a"
+        },
+        {
+            192,
+            "000102030405060708090a0b0c0d0e0f"
+            "1011121314151617",
+            plaintext,
+            "dda97ca4864cdfe06eaf70a0ec0d7191"
+        },
+        {
+            256,
+            "000102030405060708090a0b0c0d0e0f"
+            "101112131415161718191a1b1c1d1e1f",
+            plaintext,
+            "8ea2b7ca516745bfeafc49904b496089"
+        }
+    };
+
+    for (const auto& v : vectors) {
+        std::cout << "\nAES-" << v.bits
+                  << " Known-Answer Test\n";
+
+        try {
+            auto key = hexToBytes(v.key);
+            auto pt = toBlock(v.plaintext);
+            auto expected = toBlock(v.ciphertext);
+
+            AES aes(key, v.bits);
+            auto computed = aes.encrypt(pt);
+            auto decrypted = aes.decrypt(computed);
+
+            printBytes("Key", key);
+            printBytes("Plaintext", pt);
+            printBytes("Expected", expected);
+            printBytes("Computed", computed);
+            printBytes("Decrypted", decrypted);
+
+            check(computed == expected,
+                  "AES-" + std::to_string(v.bits) + " encryption");
+
+            check(decrypted == pt,
+                  "AES-" + std::to_string(v.bits) + " decryption");
+
+        } catch (const std::exception& e) {
+            check(false, "AES-" + std::to_string(v.bits) +
+                         " exception: " + e.what());
+        }
     }
-    return 0;
-    
+
+    // ==================================================
+    // 2. Round-trip tests with different plaintexts
+    // ==================================================
+    std::cout << "\n========================================\n";
+    std::cout << "2. ROUND-TRIP TESTS\n";
+    std::cout << "========================================\n";
+
+    for (const auto& v : vectors) {
+        try {
+            AES aes(hexToBytes(v.key), v.bits);
+
+            std::vector<AES::Block> blocks(5);
+
+            // All-zero block
+            blocks[0].fill(0x00);
+
+            // All-one block
+            blocks[1].fill(0xFF);
+
+            // Sequential bytes: 00, 01, ..., 0F
+            for (std::size_t i = 0; i < 16; ++i) {
+                blocks[2][i] = static_cast<std::uint8_t>(i);
+            }
+
+            // Alternating bit patterns
+            for (std::size_t i = 0; i < 16; ++i) {
+                blocks[3][i] =
+                    static_cast<std::uint8_t>(
+                        i % 2 == 0 ? 0xAA : 0x55
+                    );
+            }
+
+            // High-bit bytes
+            for (std::size_t i = 0; i < 16; ++i) {
+                blocks[4][i] =
+                    static_cast<std::uint8_t>(0x80 + i);
+            }
+
+            for (std::size_t i = 0; i < blocks.size(); ++i) {
+                auto encrypted = aes.encrypt(blocks[i]);
+                auto decrypted = aes.decrypt(encrypted);
+
+                check(
+                    decrypted == blocks[i],
+                    "AES-" + std::to_string(v.bits) +
+                    " round-trip pattern " + std::to_string(i + 1)
+                );
+            }
+        } catch (const std::exception& e) {
+            check(false, "Round-trip exception: " +
+                         std::string(e.what()));
+        }
+    }
+
+    // ==================================================
+    // 3. Key validation tests
+    // ==================================================
+    std::cout << "\n========================================\n";
+    std::cout << "3. KEY VALIDATION TESTS\n";
+    std::cout << "========================================\n";
+
+    auto expectInvalidKey = [&](const std::string& name,
+                                const std::vector<std::uint8_t>& key,
+                                int bits) {
+        try {
+            AES aes(key, bits);
+            (void)aes;
+            check(false, name);
+        } catch (const std::invalid_argument&) {
+            check(true, name);
+        } catch (...) {
+            check(false, name + " (wrong exception)");
+        }
+    };
+
+    expectInvalidKey(
+        "Reject unsupported 160-bit key",
+        std::vector<std::uint8_t>(20, 0), 160
+    );
+
+    expectInvalidKey(
+        "Reject 15-byte key declared as AES-128",
+        std::vector<std::uint8_t>(15, 0), 128
+    );
+
+    expectInvalidKey(
+        "Reject empty key declared as AES-128",
+        std::vector<std::uint8_t>{}, 128
+    );
+
+    expectInvalidKey(
+        "Reject 16-byte key declared as AES-192",
+        std::vector<std::uint8_t>(16, 0), 192
+    );
+
+    expectInvalidKey(
+        "Reject 24-byte key declared as AES-256",
+        std::vector<std::uint8_t>(24, 0), 256
+    );
+
+    expectInvalidKey(
+        "Reject unsupported 512-bit key",
+        std::vector<std::uint8_t>(64, 0), 512
+    );
+
+    // ==================================================
+    // 4. Automatic key length detection
+    // ==================================================
+    std::cout << "\n========================================\n";
+    std::cout << "4. AUTOMATIC KEY LENGTH TESTS\n";
+    std::cout << "========================================\n";
+
+    for (const auto& v : vectors) {
+        try {
+            // keyBits = 0 means infer from key size
+            AES aes(hexToBytes(v.key), 0);
+            auto pt = toBlock(v.plaintext);
+            auto expected = toBlock(v.ciphertext);
+
+            check(
+                aes.encrypt(pt) == expected,
+                "Infer AES-" + std::to_string(v.bits) + " from key size"
+            );
+        } catch (const std::exception& e) {
+            check(false, "Automatic key length: " +
+                         std::string(e.what()));
+        }
+    }
+
+    // ==================================================
+    // 5. Hex parser tests
+    // ==================================================
+    std::cout << "\n========================================\n";
+    std::cout << "5. HEX PARSER TESTS\n";
+    std::cout << "========================================\n";
+
+    try {
+        auto bytes = hexToBytes("00aF10ff");
+        check(
+            bytes == std::vector<std::uint8_t>{
+                0x00, 0xAF, 0x10, 0xFF
+            },
+            "Parse valid uppercase/lowercase hexadecimal"
+        );
+    } catch (...) {
+        check(false, "Parse valid hexadecimal");
+    }
+
+    try {
+        auto bytes = hexToBytes("");
+        check(bytes.empty(), "Accept empty hexadecimal string");
+    } catch (...) {
+        check(false, "Accept empty hexadecimal string");
+    }
+
+    auto expectInvalidHex = [&](const std::string& name,
+                                const std::string& hex) {
+        try {
+            auto bytes = hexToBytes(hex);
+            (void)bytes;
+            check(false, name);
+        } catch (const std::invalid_argument&) {
+            check(true, name);
+        } catch (...) {
+            check(false, name + " (wrong exception)");
+        }
+    };
+
+    expectInvalidHex("Reject odd-length hexadecimal", "123");
+    expectInvalidHex("Reject invalid hexadecimal", "00xz");
+    expectInvalidHex("Reject whitespace in hexadecimal", "00 11");
+
+    // ==================================================
+    // 6. Summary
+    // ==================================================
+    std::cout << "\n========================================\n";
+    std::cout << "TEST SUMMARY\n";
+    std::cout << "========================================\n";
+    std::cout << "Passed: " << passed << '\n';
+    std::cout << "Failed: " << failed << '\n';
+    std::cout << "Total : " << passed + failed << '\n';
+
+    if (failed == 0) {
+        std::cout << "\nALL TESTS PASSED\n";
+        return 0;
+    }
+
+    std::cout << "\nSOME TESTS FAILED\n";
+    return 1;
 }
