@@ -1,10 +1,8 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/aes_tests.dir/tests/main.cpp.obj"
-  "CMakeFiles/aes_tests.dir/tests/main.cpp.obj.d"
-  "aes_tests.exe"
-  "aes_tests.exe.manifest"
+  "CMakeFiles/aes_tests.dir/tests/main.cpp.o"
+  "CMakeFiles/aes_tests.dir/tests/main.cpp.o.d"
+  "aes_tests"
   "aes_tests.pdb"
-  "libaes_tests.dll.a"
 )
 
 # Per-language clean rules from dependency scanning.

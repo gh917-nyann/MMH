@@ -8,15 +8,12 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "C:/Users/ADMIN/Desktop/AESModesLab/tests/main.cpp" "CMakeFiles/aes_tests.dir/tests/main.cpp.obj" "gcc" "CMakeFiles/aes_tests.dir/tests/main.cpp.obj.d"
+  "/app/tests/main.cpp" "CMakeFiles/aes_tests.dir/tests/main.cpp.o" "gcc" "CMakeFiles/aes_tests.dir/tests/main.cpp.o.d"
   )
 
-# Targets to which this target links which contain Fortran sources.
-set(CMAKE_Fortran_TARGET_LINKED_INFO_FILES
-  )
-
-# Targets to which this target links which contain Fortran sources.
-set(CMAKE_Fortran_TARGET_FORWARD_LINKED_INFO_FILES
+# Targets to which this target links.
+set(CMAKE_TARGET_LINKED_INFO_FILES
+  "/app/mmh2026-build-gcc/CMakeFiles/aes_modes_static.dir/DependInfo.cmake"
   )
 
 # Fortran module output directory.

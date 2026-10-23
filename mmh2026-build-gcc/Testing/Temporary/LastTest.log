@@ -1,0 +1,30 @@
+Start testing: Oct 16 22:32 SE Asia Standard Time
+----------------------------------------------------------
+1/1 Testing: aes_vectors
+1/1 Test: aes_vectors
+Command: "C:/Users/ADMIN/Desktop/AESModesLab/mmh2026-build-gcc/aes_tests.exe"
+Directory: C:/Users/ADMIN/Desktop/AESModesLab/mmh2026-build-gcc
+"aes_vectors" start time: Oct 16 22:32 SE Asia Standard Time
+Output:
+----------------------------------------------------------
+PASS AES-128 FIPS-197
+PASS ECB
+PASS CBC
+PASS CFB128
+PASS CFB8
+PASS OFB
+PASS CTR
+PASS CCM RFC3610 ct
+PASS CCM RFC3610 tag
+PASS CCM RFC3610 decrypt/auth
+
+ALL 10 VECTORS PASS
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"aes_vectors" end time: Oct 16 22:32 SE Asia Standard Time
+"aes_vectors" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Oct 16 22:32 SE Asia Standard Time

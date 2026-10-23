@@ -4,17 +4,17 @@
 
 
 # Configuration directories and files
-SourceDirectory: C:/Users/ADMIN/Desktop/AESModesLab
-BuildDirectory: C:/Users/ADMIN/Desktop/AESModesLab/mmh2026-build-gcc
+SourceDirectory: /app
+BuildDirectory: /app/mmh2026-build-gcc
 
 # Where to place the cost data store
 CostDataFile: 
 
 # Site is something like machine.domain, i.e. pragmatic.crd
-Site: Lap-Of-Huy
+Site: 14d47dff0e86
 
 # Build name is osname-revision-compiler, i.e. Linux-2.4.2-2smp-c++
-BuildName: Win32-mingw32-make
+BuildName: Linux-g++
 
 # Subprojects
 LabelsForSubprojects: 
@@ -27,8 +27,8 @@ SubmitInactivityTimeout:
 NightlyStartTime: 00:00:00 EDT
 
 # Commands for the build/test/submit cycle
-ConfigureCommand: "C:/msys64/mingw64/bin/cmake.exe" "C:/Users/ADMIN/Desktop/AESModesLab"
-MakeCommand: C:/msys64/mingw64/bin/cmake.exe --build . --config "${CTEST_CONFIGURATION_TYPE}"
+ConfigureCommand: "/usr/bin/cmake" "/app"
+MakeCommand: /usr/bin/cmake --build . --config "${CTEST_CONFIGURATION_TYPE}"
 DefaultCTestConfigurationType: Release
 
 # version control
@@ -63,8 +63,8 @@ UpdateOptions:
 UpdateType: 
 
 # Compiler info
-Compiler: C:/msys64/mingw64/bin/g++.exe
-CompilerVersion: 16.2.0
+Compiler: /usr/bin/g++
+CompilerVersion: 12.2.0
 
 # Dynamic analysis (MemCheck)
 PurifyCommand: 
@@ -81,7 +81,7 @@ MemoryCheckCommandOptions:
 MemoryCheckSuppressionFile: 
 
 # Coverage
-CoverageCommand: C:/msys64/mingw64/bin/gcov.exe
+CoverageCommand: /usr/bin/gcov
 CoverageExtraFlags: -l
 
 # Testing options
@@ -95,9 +95,6 @@ TimeOut: 1500
 # so would cause the system load to exceed this value.
 TestLoad: 
 
-TLSVerify: 
-TLSVersion: 
-
 UseLaunchers: 
 CurlOptions: 
 # warning, if you add new options here that have to do with submit,
@@ -107,8 +104,3 @@ CurlOptions:
 # specify behavior for retrying the submission
 CTestSubmitRetryDelay: 5
 CTestSubmitRetryCount: 3
-
-# Invoke each test with environment variables configuring tool's collection.
-CTestTestCoverageTool: 
-CTestTestCoverageMergeExecutable: 
-CTestTestCoverageDataExecutable: 
